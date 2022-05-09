@@ -1,0 +1,218 @@
+﻿@model PagedList.IPagedList<CryptocurrencyDashboard.Models.Currency>
+@using PagedList.Mvc;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="~/Scripts/jquery-1.9.1.js"></script>
+    <script src="~/Scripts/bootstrap.js"></script>
+    <link href="~/Content/bootstrap.css" rel="stylesheet" />
+    <link href="~/Style/style.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="main-header">
+        <div class="sub-header">
+            <a href="/Currency/Index">
+                <div class="app-name">Creepyto</div>
+            </a>
+            <div class="search-box" id="sb">
+                <input oninput="searchCoin(this.value)"  class="form-control mr-sm-2 search-bar" type="text" placeholder="Search" aria-label="Search"/>           
+                <div id="suggestions" >
+                   
+                </div>                 
+            </div>
+            
+        </div>
+    </div>
+    <div class="main-container">
+        <div class="sub-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="head">Name</th>
+                        <th class="head">Price</th>
+                        <th class="head">24h %</th>
+                        <th class="head">7d %</th>
+                        <th class="head">Market Cap</th>
+                        <th class="head">Volume(24h)</th>
+                        <th class="head">Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="table-roww">
+                                    <a href="/Currency/Details?slug=@item.Slug">
+                                        <div class="primary-name">
+                                            <img class="logo" src=@item.img alt="logo" />
+                                            <p class="secondary-name">@item.Name</p>
+                                            <p class="slug">@item.Symbol</p>
+                                        </div>
+                                    </a>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="table-roww"><p class="price">@item.Price</p></div>
+                            </td>
+                            <td>
+                                @if (item.PercentChange24h >= 0)
+                                {
+                                    <div class="table-roww"><p style="color: green;" class="c24h">&#9652;@Math.Abs(@item.PercentChange24h)%</p></div>
+                                }
+                                else
+                                {
+                                    <div class="table-roww"><p style="color: #ea3943;" class="c24h">&#9662;@Math.Abs(@item.PercentChange24h)%</p></div>
+                                }
+                            </td>
+                            <td>
+                                @if (item.PercentChange7d >= 0)
+                                {
+                                    <div class="table-roww"><p style="color: green;" class="c7d">&#9652;@Math.Abs(@item.PercentChange7d)%</p></div>
+                                }
+                                else
+                                {
+                                    <div class="table-roww"><p style="color: #ea3943;" class="c7d">&#9662;@Math.Abs(@item.PercentChange7d)%</p></div>
+                                }
+
+                            </td>
+                            <td>
+                                <div class="table-roww"><p class="market-cap">@item.MarketCapUsd</p></div>
+                            </td>
+                            <td>
+                                <div class="table-roww"><p class="volume">@item.Volume24hUsd</p></div>
+                            </td>
+                            <td>
+                                <div class="table-roww"><p class="last-updated">@item.LastUpdated.Date</p></div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <br />
+            <div class="pagination" style="margin-left: 400px">
+         
+                <div>@Html.PagedListPager(Model, page => Url.Action("Index", new { page }), new PagedListRenderOptions(){LiElementClasses = new List<string> { "page-list" } })</div> 
+            </div>
+        </div>
+    </div>
+    <button type="button" class="reload btn btn-default btn-sm" on onclick="reLoadData()" data-toggle="tooltip" data-placement="top" title="Reload data by requesting API">
+          <span class="glyphicon glyphicon-refresh"></span> Reload
+        </button>
+    <table hidden id="search">
+        @foreach (var item in ViewBag.result)
+        {
+        <tr>
+            <td>@item.img</td>
+            <td>@item.Name</td>
+            <td>@item.Symbol</td>
+            <td>@item.Slug</td>
+        </tr>
+        }
+        </table>
+    <footer class="footer p-5 mt-4 mb-0">
+        <div class="footer-description">Phan Thai An - 51900002</div>
+        <div class="footer-description">Cryptocurrency Dashboard - 2021</div>
+    </footer>
+    <script>        
+        var queryString = window.location.search;
+        var page = '';
+        if (queryString == '') {
+            queryString = '?page=1';
+            page = 1;
+        } else {
+            const urlParams = new URLSearchParams(queryString);
+            page = urlParams.get('page')
+        }
+
+        function reLoadData() {
+            
+            var url = "/Currency/Index?page="+ page;
+            $.get(url, null, function (result) {
+                $("body").html(result);
+                console.log(result)
+            });
+        };
+        var suggestions = document.getElementById('suggestions');
+        var searchbox = document.getElementById('sb');
+        suggestions.innerHTML = '';
+
+  
+        function searchCoin(value) {
+            if (value.length < 1) {
+                suggestions.innerHTML = '';
+                suggestions.style.overflowY = "hidden";
+                return;
+            }
+            searching(value);
+        }
+        $(window).click(function () {
+            suggestions.innerHTML = '';
+            suggestions.style.overflowY = "hidden";
+        });
+
+        function searching(keyword) {
+            suggestions.innerHTML = '';
+            suggestions.style.overflowY = "hidden";
+            $('#search tr').each(function () {
+                var symbol = $(this).find("td:nth-child(3)").text().toLowerCase();
+                var name = $(this).find("td:nth-child(2)").text().toLowerCase();
+
+                if (symbol.indexOf(keyword.toLowerCase()) >= 0 || name.indexOf(keyword.toLowerCase()) >= 0) {
+                    var imgLink = $(this).find("td:nth-child(1)").text();
+                    var name = $(this).find("td:nth-child(2)").text();
+                    var sym = $(this).find("td:nth-child(3)").text();
+                    var slug = $(this).find("td:nth-child(4)").text();
+
+                    var div = document.createElement('div');
+                    var a = document.createElement('a');
+                    a.setAttribute('href', "/Currency/Details?slug=" + slug);
+
+                    var div2 = document.createElement('div');
+
+                    var namep = document.createElement('p');
+                    namep.className = 'name-search';
+
+                    var symp = document.createElement('p');
+                    symp.className = 'symbol-search';
+
+                    var img = document.createElement('img');
+                    img.setAttribute('src', imgLink);
+                    img.className = 'logo-search';
+
+                    namep.innerHTML = name;
+                    symp.innerHTML = sym;
+
+                    div2.appendChild(img);
+                    div2.appendChild(namep);
+                    div2.appendChild(symp);
+                    div2.className = 'list-group-item';
+
+                    a.appendChild(div2);
+                    div.appendChild(a);
+
+                    suggestions.appendChild(div);
+                }
+            });
+            if (suggestions.childElementCount > 10) {
+                suggestions.style.maxHeight = "400px";
+                suggestions.style.overflowY = "scroll";
+            }
+            else
+                suggestions.style.overflowY = "hidden";
+        }
+    </script>
+</body>
+</html>
+
